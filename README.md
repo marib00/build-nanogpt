@@ -1,3 +1,72 @@
+# build nanoGPT with Tensor Paralellism
+
+This repo adds a version of nanoGPT which implements tensor parallelism following [this](https://pytorch.org/tutorials/intermediate/TP_tutorial.html#apply-sequence-parallel-to-layernorm-rmsnorm-layers) tutorial.
+
+After countless hours of fun, I was able to make it work, except it doesn't work very well 🤣
+
+| GPU(s)  | Parallelism | Throughput      |
+| ------- | ----------- | --------------- |
+| 1x 3090 | -           | ~ 66.5k tok/sec |
+| 2x 3090 | DDP         | ~132.0k tok/sec |
+| 2x 3090 | TP          | ~ 70.5k tok/sec |
+
+The batch size was always `B = 16` and the 3090s are NV-Linked. It is quite possible that I have made a rookie mistake somewhere and that's why it's disappointingly slow 🤷‍♂️.
+
+I haven't touched any of the file from the original repo, everything happens in a new [train_gpt2_tp.py](https://github.com/marib00/build-nanogpt/blob/master/train_gpt2_tp.py) file.
+
+Launch command:
+```
+torchrun --standalone --nproc-per-node=2 train_gpt2_tp.py
+```
+
+## Some interesting learnigs
+
+### 1. `nullcontext()`
+`nullcontext()` allows you to do this:
+```
+from contextlib import nullcontext
+
+with loss_parallel() if tp else nullcontext():
+    logits, _ = model(x)
+    ...
+    loss.backward()
+```
+rather than much more messy:
+```
+if tp:
+    with loss_parallel():
+        logits, _ = model(x)
+        ...
+        loss.backward()
+else:
+    logits, _ = model(x)
+    ...
+    loss.backward()
+```
+
+### 2. Debugging parallel processes in VScode
+... with breakpoints, stepping into libraries and whatnots! All you need to do is add the following configuration to your `launch.json` file:
+
+```
+{
+    "version": "0.2.0",
+    "configurations": [
+        ...,
+        {
+            "name": "Distributed: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "purpose": ["debug-in-terminal"],
+            "console": "integratedTerminal",
+            "module":"torch.distributed.run",
+            "args":["--standalone","--nproc_per_node=2","${file}"],
+            "justMyCode": false,
+        },
+    ]
+}
+```
+
+
 # build nanoGPT
 
 This repo holds the from-scratch reproduction of [nanoGPT](https://github.com/karpathy/nanoGPT/tree/master). The git commits were specifically kept step by step and clean so that one can easily walk through the git commit history to see it built slowly. Additionally, there is an accompanying [video lecture on YouTube](https://youtu.be/l8pRSuU81PU) where you can see me introduce each commit and explain the pieces along the way.
