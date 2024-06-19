@@ -12,7 +12,7 @@ After countless hours of fun, I was able to make it work, except it doesn't work
 
 The batch size was always `B = 16` and the 3090s are NV-Linked. It is quite possible that I have made a rookie mistake somewhere and that's why it's disappointingly slow 🤷‍♂️.
 
-I haven't touched any of the file from the original repo, everything happens in a new [train_gpt2_tp.py](https://github.com/marib00/build-nanogpt/blob/master/train_gpt2_tp.py) file.
+I haven't touched any of the files from the original repo, everything happens in the new [train_gpt2_tp.py](https://github.com/marib00/build-nanogpt/blob/master/train_gpt2_tp.py) file.
 
 Launch command:
 ```
